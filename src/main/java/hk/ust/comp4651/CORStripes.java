@@ -33,6 +33,11 @@ public class CORStripes extends Configured implements Tool {
 	 */
 	private static class CORMapper1 extends
 			Mapper<LongWritable, Text, Text, IntWritable> {
+
+		// Reuse objects to save overhead of object creation.
+		private final static IntWritable ONE = new IntWritable(1);
+		private final static Text WORD = new Text();
+
 		@Override
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
@@ -43,6 +48,15 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			while(doc_tokenizer.hasMoreTokens()) {
+				String w = doc_tokenizer.nextToken();
+				// Skip empty words
+				if (w.length() == 0) {
+					continue;
+				}
+				WORD.set(w);
+				context.write(WORD, ONE);
+			}
 		}
 	}
 
@@ -51,11 +65,23 @@ public class CORStripes extends Configured implements Tool {
 	 */
 	private static class CORReducer1 extends
 			Reducer<Text, IntWritable, Text, IntWritable> {
+		
+		// Reuse objects.
+		private final static IntWritable SUM = new IntWritable();
+
 		@Override
 		public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			// Sum up values.
+			Iterator<IntWritable> iter = values.iterator();
+			int sum = 0;
+			while (iter.hasNext()) {
+				sum += iter.next().get();
+			}
+			SUM.set(sum);
+			context.write(key, SUM);
 		}
 	}
 
@@ -63,6 +89,11 @@ public class CORStripes extends Configured implements Tool {
 	 * TODO: write your second-pass Mapper here
 	 */
 	public static class CORStripesMapper2 extends Mapper<LongWritable, Text, Text, MapWritable> {
+
+		// Reuse objects to save overhead of object creation.
+		private static final Text KEY = new Text();
+		private static final HashMapStringIntWritable STRIPE = new HashMapStringIntWritable();
+
 		@Override
 		protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			Set<String> sorted_word_set = new TreeSet<String>();
@@ -75,6 +106,9 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			if (sorted_word_set.size() > 1) {
+				
+			}
 		}
 	}
 

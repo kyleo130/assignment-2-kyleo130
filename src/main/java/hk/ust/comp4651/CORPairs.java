@@ -108,6 +108,10 @@ public class CORPairs extends Configured implements Tool {
 	 * TODO: write your second-pass Mapper here
 	 */
 	public static class CORPairsMapper2 extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
+		// Reuse objects to save overhead of object creation.
+		private static final IntWritable ONE = new IntWritable(1);
+		private static final PairOfStrings BIGRAM = new PairOfStrings();
+
 		@Override
 		protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			// Please use this tokenizer! DO NOT implement a tokenizer by yourself!
@@ -115,6 +119,19 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			if (doc_tokenizer.countTokens() > 1){
+				String previous_word = doc_tokenizer.nextToken();
+				while (doc_tokenizer.hasMoreTokens()) {
+					String w = doc_tokenizer.nextToken();
+					// Skip empty words
+					if (w.length() == 0) {
+						continue;
+					}
+					BIGRAM.set(previous_word, w);
+					context.write(BIGRAM, ONE);
+					previous_word = w;
+				}
+			}
 		}
 	}
 
@@ -122,11 +139,20 @@ public class CORPairs extends Configured implements Tool {
 	 * TODO: write your second-pass Combiner here
 	 */
 	private static class CORPairsCombiner2 extends Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
+		private static final IntWritable SUM = new IntWritable();
+
 		@Override
 		protected void reduce(PairOfStrings key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<IntWritable> iter = values.iterator();
+			int sum = 0;
+			while (iter.hasNext()) {
+				sum += iter.next().get();
+			}
+			SUM.set(sum);
+			context.write(key, SUM);
 		}
 	}
 
