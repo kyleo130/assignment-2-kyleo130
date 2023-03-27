@@ -43,6 +43,11 @@ public class CORPairs extends Configured implements Tool {
 	 */
 	private static class CORMapper1 extends
 			Mapper<LongWritable, Text, Text, IntWritable> {
+		
+		// Reuse objects to save overhead of object creation.
+		private final static IntWritable ONE = new IntWritable(1);
+		private final static Text WORD = new Text();
+
 		@Override
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
@@ -53,6 +58,23 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			while(doc_tokenizer.hasMoreTokens()) {
+				String w = doc_tokenizer.nextToken();
+				// Skip empty words
+				if (w.length() == 0) {
+					continue;
+				}
+				WORD.set(w);
+				context.write(WORD, ONE);
+				/*
+				Integer count = word_set.get(w);
+				if (count == null) {
+					word_set.put(w, 1);
+				} else {
+					word_set.put(w, count + 1);
+				}
+				*/
+			}
 		}
 	}
 
@@ -61,11 +83,23 @@ public class CORPairs extends Configured implements Tool {
 	 */
 	private static class CORReducer1 extends
 			Reducer<Text, IntWritable, Text, IntWritable> {
+		
+		// Reuse objects.
+		private final static IntWritable SUM = new IntWritable();
+
 		@Override
 		public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			// Sum up values.
+			Iterator<IntWritable> iter = values.iterator();
+			int sum = 0;
+			while (iter.hasNext()) {
+				sum += iter.next().get();
+			}
+			SUM.set(sum);
+			context.write(key, SUM);
 		}
 	}
 
