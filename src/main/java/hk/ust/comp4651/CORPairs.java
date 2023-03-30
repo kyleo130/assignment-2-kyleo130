@@ -66,14 +66,6 @@ public class CORPairs extends Configured implements Tool {
 				}
 				WORD.set(w);
 				context.write(WORD, ONE);
-				/*
-				Integer count = word_set.get(w);
-				if (count == null) {
-					word_set.put(w, 1);
-				} else {
-					word_set.put(w, count + 1);
-				}
-				*/
 			}
 		}
 	}
@@ -127,7 +119,13 @@ public class CORPairs extends Configured implements Tool {
 					if (w.length() == 0) {
 						continue;
 					}
-					BIGRAM.set(previous_word, w);
+
+					if (previous_word.compareTo(w) < 0) {
+						BIGRAM.set(previous_word, w);
+					} else {
+						BIGRAM.set(w, previous_word);
+					}
+					
 					context.write(BIGRAM, ONE);
 					previous_word = w;
 				}
@@ -160,6 +158,9 @@ public class CORPairs extends Configured implements Tool {
 	 * TODO: write your second-pass Reducer here
 	 */
 	public static class CORPairsReducer2 extends Reducer<PairOfStrings, IntWritable, PairOfStrings, DoubleWritable> {
+
+		// Reuse objects.
+		private final static DoubleWritable VALUE = new DoubleWritable();
 		private final static Map<String, Integer> word_total_map = new HashMap<String, Integer>();
 
 		/*
@@ -205,6 +206,15 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<IntWritable> iter = values.iterator();
+			int cor = 0;
+			while (iter.hasNext()) {
+				cor += iter.next().get();
+			}
+			int freqA = word_total_map.get(key.getLeftElement());
+			int freqB = word_total_map.get(key.getRightElement());
+			VALUE.set((double) cor / (freqA * freqB));
+			context.write(key, VALUE);
 		}
 	}
 
