@@ -1,5 +1,7 @@
 package hk.ust.comp4651;
 
+import java.util.Map.Entry;
+
 import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -88,7 +90,7 @@ public class CORStripes extends Configured implements Tool {
 	/*
 	 * TODO: write your second-pass Mapper here
 	 */
-	public static class CORStripesMapper2 extends Mapper<LongWritable, Text, Text, MapWritable> {
+	public static class CORStripesMapper2 extends Mapper<LongWritable, Text, Text, HashMapStringIntWritable> {
 
 		// Reuse objects to save overhead of object creation.
 		private static final Text KEY = new Text();
@@ -106,8 +108,24 @@ public class CORStripes extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
-			if (sorted_word_set.size() > 1) {
-				
+			Iterator<String> iter = sorted_word_set.iterator();
+			ArrayList<String> words = new ArrayList<String>();
+			while (iter.hasNext()) {
+				words.add(iter.next());
+			}
+
+			for (int i = 0; i < words.size(); i++) {
+				KEY.set(words.get(i));
+				for (int j = i + 1; j < words.size(); j++) {
+					String w = words.get(j);
+					// Skip empty words
+					if (w.length() == 0) {
+						continue;
+					}
+					STRIPE.increment(w);
+					context.write(KEY, STRIPE);
+					STRIPE.clear();
+				}
 			}
 		}
 	}
@@ -115,21 +133,36 @@ public class CORStripes extends Configured implements Tool {
 	/*
 	 * TODO: write your second-pass Combiner here
 	 */
-	public static class CORStripesCombiner2 extends Reducer<Text, MapWritable, Text, MapWritable> {
+	public static class CORStripesCombiner2 extends Reducer<Text, HashMapStringIntWritable, Text, HashMapStringIntWritable> {
+		// Reuse objects.
+		private final static HashMapStringIntWritable SUM_STRIPES = new HashMapStringIntWritable();
 		static IntWritable ZERO = new IntWritable(0);
 
 		@Override
-		protected void reduce(Text key, Iterable<MapWritable> values, Context context) throws IOException, InterruptedException {
+		protected void reduce(Text key, Iterable<HashMapStringIntWritable> stripes, Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<HashMapStringIntWritable> iter = stripes.iterator();
+
+			while (iter.hasNext()) {
+				for ( String second_w : iter.next().keySet() ) {
+					SUM_STRIPES.increment(second_w);
+				}
+			}
+			context.write(key, SUM_STRIPES);
+			SUM_STRIPES.clear();
 		}
 	}
 
 	/*
 	 * TODO: write your second-pass Reducer here
 	 */
-	public static class CORStripesReducer2 extends Reducer<Text, MapWritable, PairOfStrings, DoubleWritable> {
+	public static class CORStripesReducer2 extends Reducer<Text, HashMapStringIntWritable, PairOfStrings, DoubleWritable> {
+		// Reuse objects.
+		private final static HashMapStringIntWritable SUM_STRIPES = new HashMapStringIntWritable();
+		private final static PairOfStrings BIGRAM = new PairOfStrings();
+		private final static DoubleWritable VALUE = new DoubleWritable();
 		private static Map<String, Integer> word_total_map = new HashMap<String, Integer>();
 		private static IntWritable ZERO = new IntWritable(0);
 
@@ -172,10 +205,27 @@ public class CORStripes extends Configured implements Tool {
 		 * TODO: write your second-pass Reducer here
 		 */
 		@Override
-		protected void reduce(Text key, Iterable<MapWritable> values, Context context) throws IOException, InterruptedException {
+		protected void reduce(Text key, Iterable<HashMapStringIntWritable> stripes, Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<HashMapStringIntWritable> iter = stripes.iterator();
+			String wordA = key.toString();
+			while (iter.hasNext()) {
+				SUM_STRIPES.plus(iter.next());
+			}
+
+			for (Entry<String, Integer> mapElement : SUM_STRIPES.entrySet()) { 
+	            String wordB = (String) mapElement.getKey();
+	            int cor = (int) mapElement.getValue();
+				int freqA = word_total_map.get(wordA);
+				int freqB = word_total_map.get(wordB);
+	            BIGRAM.set(wordA, wordB);
+	            VALUE.set((double) cor / (freqA * freqB));
+	            context.write(BIGRAM, VALUE);
+	        }
+	        
+	        SUM_STRIPES.clear();
 		}
 	}
 

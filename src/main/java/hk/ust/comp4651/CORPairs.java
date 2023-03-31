@@ -125,39 +125,13 @@ public class CORPairs extends Configured implements Tool {
 						continue;
 					}
 
-					/*
 					if (wordA.compareTo(wordB) < 0) {
 						BIGRAM.set(wordA, wordB);
 					} else {
 						BIGRAM.set(wordB, wordA);
 					}
-					*/
-					BIGRAM.set(wordA, wordB);
-					context.write(BIGRAM, ONE);
 				}
 			}
-			
-			/*
-			if (doc_tokenizer.countTokens() > 1){
-				String previous_word = doc_tokenizer.nextToken();
-				while (doc_tokenizer.hasMoreTokens()) {
-					String w = doc_tokenizer.nextToken();
-					// Skip empty words
-					if (w.length() == 0) {
-						continue;
-					}
-
-					if (previous_word.compareTo(w) < 0) {
-						BIGRAM.set(previous_word, w);
-					} else {
-						BIGRAM.set(w, previous_word);
-					}
-					
-					context.write(BIGRAM, ONE);
-					previous_word = w;
-				}
-			}
-			*/
 		}
 	}
 
