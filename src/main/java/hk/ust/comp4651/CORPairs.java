@@ -111,6 +111,31 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			ArrayList<String> words = new ArrayList<String>();
+			while (doc_tokenizer.hasMoreTokens()) {
+				words.add(doc_tokenizer.nextToken());
+			}
+
+			for (int i = 0; i < words.size(); i++) {
+				String wordA = words.get(i);
+				for (int j = i + 1; j < words.size(); j++) {
+					String wordB = words.get(j);
+					
+					if (wordA.equals(wordB)) {
+						continue;
+					}
+
+					if (wordA.compareTo(wordB) < 0) {
+						BIGRAM.set(wordA, wordB);
+					} else {
+						BIGRAM.set(wordB, wordA);
+					}
+
+					context.write(BIGRAM, ONE);
+				}
+			}
+			
+			/*
 			if (doc_tokenizer.countTokens() > 1){
 				String previous_word = doc_tokenizer.nextToken();
 				while (doc_tokenizer.hasMoreTokens()) {
@@ -130,6 +155,7 @@ public class CORPairs extends Configured implements Tool {
 					previous_word = w;
 				}
 			}
+			*/
 		}
 	}
 
