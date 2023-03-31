@@ -120,17 +120,19 @@ public class CORPairs extends Configured implements Tool {
 				String wordA = words.get(i);
 				for (int j = i + 1; j < words.size(); j++) {
 					String wordB = words.get(j);
-					
+
 					if (wordA.equals(wordB)) {
 						continue;
 					}
 
+					/*
 					if (wordA.compareTo(wordB) < 0) {
 						BIGRAM.set(wordA, wordB);
 					} else {
 						BIGRAM.set(wordB, wordA);
 					}
-
+					*/
+					BIGRAM.set(wordA, wordB);
 					context.write(BIGRAM, ONE);
 				}
 			}
