@@ -106,30 +106,26 @@ public class CORPairs extends Configured implements Tool {
 
 		@Override
 		protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+			Set<String> sorted_word_set = new TreeSet<String>();
 			// Please use this tokenizer! DO NOT implement a tokenizer by yourself!
 			StringTokenizer doc_tokenizer = new StringTokenizer(value.toString().replaceAll("[^a-z A-Z]", " "));
+			while (doc_tokenizer.hasMoreTokens()) {
+				sorted_word_set.add(doc_tokenizer.nextToken());
+			}
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<String> iter = sorted_word_set.iterator();
 			ArrayList<String> words = new ArrayList<String>();
-			while (doc_tokenizer.hasMoreTokens()) {
-				words.add(doc_tokenizer.nextToken());
+			while (iter.hasNext()) {
+				words.add(iter.next());
 			}
 
 			for (int i = 0; i < words.size(); i++) {
 				String wordA = words.get(i);
 				for (int j = i + 1; j < words.size(); j++) {
 					String wordB = words.get(j);
-
-					if (wordA.equals(wordB)) {
-						continue;
-					}
-
-					if (wordA.compareTo(wordB) < 0) {
-						BIGRAM.set(wordA, wordB);
-					} else {
-						BIGRAM.set(wordB, wordA);
-					}
+					BIGRAM.set(wordA, wordB);
 				}
 			}
 		}
