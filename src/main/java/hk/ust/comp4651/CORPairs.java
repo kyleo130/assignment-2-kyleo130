@@ -126,6 +126,7 @@ public class CORPairs extends Configured implements Tool {
 				for (int j = i + 1; j < words.size(); j++) {
 					String wordB = words.get(j);
 					BIGRAM.set(wordA, wordB);
+					context.write(BIGRAM, ONE);
 				}
 			}
 		}
